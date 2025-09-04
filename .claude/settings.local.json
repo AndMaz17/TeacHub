@@ -25,7 +25,9 @@
       "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\utils/**)",
       "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\components\\templates/**)",
       "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\hooks/**)",
-      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\hooks/**)"
+      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\hooks/**)",
+      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\app/**)",
+      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\components\\templates/**)"
     ],
     "deny": [],
     "ask": []

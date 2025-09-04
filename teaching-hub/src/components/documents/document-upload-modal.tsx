@@ -225,7 +225,7 @@ export function DocumentUploadModal({ isOpen, onClose }: DocumentUploadModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto w-[90vw]">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
