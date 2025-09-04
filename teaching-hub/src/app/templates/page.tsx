@@ -1,8 +1,15 @@
+'use client';
+
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { TemplatePreviewModal } from '@/components/templates/template-preview-modal';
+import { DocumentPrintPreview } from '@/components/documents/document-print-preview';
+import { useActivityStore } from '@/store/useActivityStore';
+import { toast } from 'sonner';
 import { 
   Search, 
   Filter,
@@ -79,6 +86,45 @@ const difficultyColors = {
 };
 
 export default function TemplatesPage() {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<typeof mockTemplates[0] | null>(null);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const { addActivity } = useActivityStore();
+
+  const handleUseTemplate = (template: typeof mockTemplates[0]) => {
+    setSelectedTemplate(template);
+    setPreviewOpen(true);
+  };
+
+  const handleDownloadTemplate = (template: typeof mockTemplates[0]) => {
+    toast.success(`Template "${template.title}" scaricato`);
+    
+    addActivity({
+      type: 'download',
+      title: 'Template scaricato',
+      description: `Hai scaricato il template "${template.title}"`,
+      icon: 'download'
+    });
+  };
+
+  const handleShareTemplate = (template: typeof mockTemplates[0]) => {
+    navigator.clipboard.writeText(`${window.location.origin}/templates/${template.id}`);
+    
+    addActivity({
+      type: 'share',
+      title: 'Template condiviso',
+      description: `Hai condiviso il template "${template.title}"`,
+      icon: 'share'
+    });
+    
+    toast.success(`Link del template "${template.title}" copiato negli appunti`);
+  };
+
+  const handleOpenPrintPreview = () => {
+    setPreviewOpen(false);
+    setPrintPreviewOpen(true);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -190,15 +236,29 @@ export default function TemplatesPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t">
-                    <Button size="sm" className="flex-1 mr-2">
+                    <Button 
+                      size="sm" 
+                      className="flex-1 mr-2"
+                      onClick={() => handleUseTemplate(template)}
+                    >
                       <Copy className="mr-1 h-3 w-3" />
                       Usa Template
                     </Button>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleShareTemplate(template)}
+                      >
                         <Share className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleDownloadTemplate(template)}
+                      >
                         <Download className="h-3 w-3" />
                       </Button>
                     </div>
@@ -239,6 +299,53 @@ export default function TemplatesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Template Preview Modal */}
+      {selectedTemplate && (
+        <TemplatePreviewModal
+          isOpen={previewOpen}
+          onClose={() => {
+            setPreviewOpen(false);
+            setSelectedTemplate(null);
+          }}
+          onOpenPrintPreview={handleOpenPrintPreview}
+          templateName={getTemplateName(selectedTemplate)}
+          templateSubject={selectedTemplate.subject}
+          templateDescription={selectedTemplate.description}
+          usageCount={selectedTemplate.usageCount}
+        />
+      )}
+
+      {/* Template Print Preview */}
+      {selectedTemplate && (
+        <DocumentPrintPreview
+          isOpen={printPreviewOpen}
+          onClose={() => {
+            setPrintPreviewOpen(false);
+            setSelectedTemplate(null);
+          }}
+          document={{
+            id: selectedTemplate.id,
+            title: selectedTemplate.title,
+            description: selectedTemplate.description,
+            subject: selectedTemplate.subject,
+            type: 'TEMPLATE',
+            difficulty: selectedTemplate.difficulty,
+            createdAt: new Date()
+          }}
+        />
+      )}
     </MainLayout>
   );
+}
+
+function getTemplateName(template: typeof mockTemplates[0]): string {
+  if (template.subject === 'Letteratura Italiana') {
+    return 'Verifica Dante';
+  } else if (template.subject === 'Storia') {
+    return 'Quiz Storia';
+  } else if (template.subject === 'Matematica') {
+    return 'Test Matematica';
+  }
+  return 'Quiz Storia';
 }

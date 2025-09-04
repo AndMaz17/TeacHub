@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,39 @@ interface QuizModalProps {
   type: 'literature' | 'stem' | 'quick';
   presetSubject?: string;
 }
+
+const subjectSuggestions = [
+  'Matematica',
+  'Matematica Applicata',
+  'Matematica Avanzata',
+  'Italiano',
+  'Letteratura Italiana',
+  'Letteratura Inglese',
+  'Storia',
+  'Storia dell\'Arte',
+  'Storia Antica',
+  'Storia Moderna',
+  'Geografia',
+  'Scienze',
+  'Scienze Naturali',
+  'Biologia',
+  'Chimica',
+  'Fisica',
+  'Inglese',
+  'Francese',
+  'Spagnolo',
+  'Tedesco',
+  'Filosofia',
+  'Latino',
+  'Greco',
+  'Arte',
+  'Musica',
+  'Educazione Fisica',
+  'Tecnologia',
+  'Informatica',
+  'Economia',
+  'Diritto'
+];
 
 export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalProps) {
   const [formData, setFormData] = useState({
@@ -122,11 +156,11 @@ export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalPro
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="subject">Materia *</Label>
-          <Input
-            id="subject"
-            placeholder="Es. Letteratura Italiana, Matematica..."
+          <Autocomplete
             value={formData.subject}
-            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+            onValueChange={(value) => setFormData({ ...formData, subject: value })}
+            suggestions={subjectSuggestions}
+            placeholder="Scrivi per cercare... (es. Mat, Storia, Ita...)"
           />
         </div>
         

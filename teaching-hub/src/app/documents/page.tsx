@@ -32,9 +32,13 @@ import {
   Star,
   Download,
   Share,
+  Eye,
   X
 } from 'lucide-react';
 import { useDocumentsStore } from '@/store/useDocumentsStore';
+import { DocumentPreviewModal } from '@/components/documents/document-preview-modal';
+import { DocumentUploadModal } from '@/components/documents/document-upload-modal';
+import { DocumentPrintPreview } from '@/components/documents/document-print-preview';
 import { DocumentType, Difficulty } from '@/types';
 import { toast } from 'sonner';
 
@@ -68,6 +72,10 @@ export default function DocumentsPage() {
 
   const [showFilters, setShowFilters] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
 
   useEffect(() => {
     let count = 0;
@@ -93,8 +101,18 @@ export default function DocumentsPage() {
     toast.success(`Link di "${title}" copiato negli appunti`);
   };
 
+  const handlePreview = (document: any) => {
+    setSelectedDocument(document);
+    setPreviewOpen(true);
+  };
+
+  const handleOpenPrintPreview = () => {
+    setPreviewOpen(false);
+    setPrintPreviewOpen(true);
+  };
+
   const handleNewDocument = () => {
-    toast.success('Apertura creazione nuovo documento...');
+    setUploadOpen(true);
   };
 
   return (
@@ -327,6 +345,15 @@ export default function DocumentsPage() {
                         variant="ghost" 
                         size="sm" 
                         className="h-8 w-8 p-0"
+                        onClick={() => handlePreview(doc)}
+                        title="Anteprima documento"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
                         onClick={() => handleShare(doc.id, doc.title)}
                       >
                         <Share className="h-3 w-3" />
@@ -370,6 +397,37 @@ export default function DocumentsPage() {
           </div>
         )}
       </div>
+
+      {/* Document Preview Modal */}
+      {selectedDocument && (
+        <DocumentPreviewModal
+          isOpen={previewOpen}
+          onClose={() => {
+            setPreviewOpen(false);
+            setSelectedDocument(null);
+          }}
+          onOpenPrintPreview={handleOpenPrintPreview}
+          document={selectedDocument}
+        />
+      )}
+
+      {/* Document Print Preview */}
+      {selectedDocument && (
+        <DocumentPrintPreview
+          isOpen={printPreviewOpen}
+          onClose={() => {
+            setPrintPreviewOpen(false);
+            setSelectedDocument(null);
+          }}
+          document={selectedDocument}
+        />
+      )}
+
+      {/* Document Upload Modal */}
+      <DocumentUploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+      />
     </MainLayout>
   );
 }

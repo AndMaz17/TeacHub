@@ -16,6 +16,121 @@ interface AIResponse {
   error?: string;
 }
 
+// Quick quiz generator with only multiple choice questions
+const generateQuickMultipleChoiceQuiz = (subject: string, topic: string, questionCount: number): QuizContent => {
+  const subjectTemplates = {
+    'Matematica': [
+      {
+        text: `In ${topic}, quale formula è corretta per calcolare l'area?`,
+        options: ['A = b × h', 'A = π × r²', 'A = (b + h) / 2', 'A = l × l'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `Quale proprietà è vera per ${topic}?`,
+        options: ['È sempre positivo', 'Può essere negativo', 'È sempre intero', 'È sempre razionale'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `In un problema di ${topic}, quale approccio è più efficace?`,
+        options: ['Metodo algebrico', 'Metodo grafico', 'Metodo numerico', 'Dipende dal problema'],
+        correctAnswer: 3
+      }
+    ],
+    'Storia': [
+      {
+        text: `L'evento principale riguardo a ${topic} avvenne in:`,
+        options: ['XVIII secolo', 'XIX secolo', 'XX secolo', 'XVII secolo'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `Le cause principali di ${topic} furono:`,
+        options: ['Economiche', 'Politiche', 'Sociali', 'Tutte le precedenti'],
+        correctAnswer: 3
+      },
+      {
+        text: `Le conseguenze di ${topic} influenzarono:`,
+        options: ['Solo l\'Europa', 'Solo l\'America', 'Il mondo intero', 'Solo l\'Asia'],
+        correctAnswer: 2
+      }
+    ],
+    'Italiano': [
+      {
+        text: `L'autore più rappresentativo di ${topic} è:`,
+        options: ['Dante Alighieri', 'Francesco Petrarca', 'Giovanni Boccaccio', 'Ludovico Ariosto'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `Lo stile letterario di ${topic} è caratterizzato da:`,
+        options: ['Semplicità', 'Complessità', 'Realismo', 'Simbolismo'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `Il tema principale di ${topic} riguarda:`,
+        options: ['L\'amore', 'La natura', 'La società', 'Tutti i precedenti'],
+        correctAnswer: 3
+      }
+    ],
+    'Scienze': [
+      {
+        text: `In ${topic}, l'elemento fondamentale è:`,
+        options: ['Il carbonio', 'L\'ossigeno', 'L\'idrogeno', 'L\'azoto'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `Il processo più importante in ${topic} è:`,
+        options: ['La fotosintesi', 'La respirazione', 'La digestione', 'La circolazione'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      },
+      {
+        text: `La caratteristica principale di ${topic} è:`,
+        options: ['Velocità', 'Precisione', 'Efficienza', 'Adattabilità'],
+        correctAnswer: Math.floor(Math.random() * 4)
+      }
+    ]
+  };
+
+  const defaultTemplate = [
+    {
+      text: `Quale affermazione su ${topic} è corretta?`,
+      options: ['Opzione A', 'Opzione B', 'Opzione C', 'Opzione D'],
+      correctAnswer: Math.floor(Math.random() * 4)
+    },
+    {
+      text: `In che modo ${topic} influenza il risultato?`,
+      options: ['Positivamente', 'Negativamente', 'Non influenza', 'Dipende dal contesto'],
+      correctAnswer: 3
+    },
+    {
+      text: `La caratteristica principale di ${topic} è:`,
+      options: ['Innovativa', 'Tradizionale', 'Complessa', 'Semplice'],
+      correctAnswer: Math.floor(Math.random() * 4)
+    }
+  ];
+
+  const templates = subjectTemplates[subject as keyof typeof subjectTemplates] || defaultTemplate;
+  const questions: Question[] = [];
+  
+  for (let i = 0; i < questionCount; i++) {
+    const template = templates[i % templates.length];
+    questions.push({
+      id: String(i + 1),
+      text: template.text,
+      type: 'multiple_choice',
+      options: template.options,
+      correctAnswer: template.correctAnswer,
+      points: 2
+    });
+  }
+
+  return {
+    title: `Quiz Rapido: ${subject} - ${topic}`,
+    instructions: 'Quiz a risposta multipla. Seleziona la risposta corretta per ogni domanda. Tempo: 15 minuti.',
+    questions,
+    totalPoints: questionCount * 2,
+    timeLimit: 15
+  };
+};
+
 // Mock AI responses per diversi tipi di materie
 const mockResponses = {
   literature: {
@@ -255,11 +370,8 @@ export function useAI() {
           };
         }
       } else {
-        // Default quick quiz for other subjects
-        response = {
-          ...mockResponses.history,
-          title: `Quiz di ${params.subject} - ${params.topic}`,
-        };
+        // Generate quick quiz with only multiple choice questions
+        response = generateQuickMultipleChoiceQuiz(params.subject, params.topic, params.questionCount || 10);
       }
 
       // Adjust question count if requested
