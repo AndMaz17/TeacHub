@@ -77,7 +77,7 @@ export default function Home() {
         <div className="absolute bottom-1/3 left-8 text-rose-500 opacity-45 transform rotate-40">
           <Eraser className="h-9 w-9" />
         </div>
-        <div className="absolute top-60 left-1/2 text-slate-500 opacity-50 transform -rotate-10">
+        <div className="absolute bottom-1/4 right-1/5 text-slate-500 opacity-50 transform -rotate-10">
           <Brain className="h-12 w-12" />
         </div>
       </div>
