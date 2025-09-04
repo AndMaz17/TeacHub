@@ -8,14 +8,18 @@ interface DocumentsStore {
   filterType: DocumentType | 'ALL';
   filterDifficulty: Difficulty | 'ALL';
   filterSubject: string;
+  filterGrade: string;
   isLoading: boolean;
   
   // Actions
   setDocuments: (documents: Document[]) => void;
+  addDocument: (document: Omit<Document, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
+  deleteDocument: (documentId: string) => void;
   setSearchTerm: (term: string) => void;
   setFilterType: (type: DocumentType | 'ALL') => void;
   setFilterDifficulty: (difficulty: Difficulty | 'ALL') => void;
   setFilterSubject: (subject: string) => void;
+  setFilterGrade: (grade: string) => void;
   setIsLoading: (loading: boolean) => void;
   applyFilters: () => void;
   clearFilters: () => void;
@@ -116,10 +120,33 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
   filterType: 'ALL',
   filterDifficulty: 'ALL',
   filterSubject: '',
+  filterGrade: '',
   isLoading: false,
 
   setDocuments: (documents) => {
     set({ documents, filteredDocuments: documents });
+    get().applyFilters();
+  },
+
+  addDocument: (documentData) => {
+    const newDocument: Document = {
+      ...documentData,
+      id: Date.now().toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 'user1'
+    };
+    
+    const { documents } = get();
+    const updatedDocuments = [newDocument, ...documents];
+    set({ documents: updatedDocuments });
+    get().applyFilters();
+  },
+
+  deleteDocument: (documentId) => {
+    const { documents } = get();
+    const updatedDocuments = documents.filter(doc => doc.id !== documentId);
+    set({ documents: updatedDocuments });
     get().applyFilters();
   },
 
@@ -143,10 +170,15 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
     get().applyFilters();
   },
 
+  setFilterGrade: (grade) => {
+    set({ filterGrade: grade });
+    get().applyFilters();
+  },
+
   setIsLoading: (loading) => set({ isLoading: loading }),
 
   applyFilters: () => {
-    const { documents, searchTerm, filterType, filterDifficulty, filterSubject } = get();
+    const { documents, searchTerm, filterType, filterDifficulty, filterSubject, filterGrade } = get();
     
     let filtered = [...documents];
 
@@ -177,6 +209,13 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       );
     }
 
+    // Grade filter
+    if (filterGrade.trim()) {
+      filtered = filtered.filter(doc => 
+        doc.grade.toLowerCase().includes(filterGrade.toLowerCase())
+      );
+    }
+
     set({ filteredDocuments: filtered });
   },
 
@@ -186,6 +225,7 @@ export const useDocumentsStore = create<DocumentsStore>((set, get) => ({
       filterType: 'ALL',
       filterDifficulty: 'ALL',
       filterSubject: '',
+      filterGrade: '',
     });
     get().applyFilters();
   }

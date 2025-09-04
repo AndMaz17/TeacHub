@@ -11,19 +11,22 @@ export const generatePDF = async (content: QuizContent, options: DownloadOptions
   // Simulate PDF generation delay
   await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
 
-  const pdfContent = formatContentForPDF(content, options);
+  // Generate content based on format
+  const fileContent = options.format === 'pdf' ? 
+    generateSimplePDF(content, options) : 
+    formatContentForPDF(content, options);
   
-  // Create a proper text file that can be opened (simulating PDF)
+  // Create proper file with correct MIME type
   const mimeType = options.format === 'pdf' ? 'application/pdf' : 'text/plain';
-  const blob = new Blob([pdfContent], { 
-    type: options.format === 'pdf' ? 'text/plain' : mimeType 
+  const blob = new Blob([fileContent], { 
+    type: mimeType 
   });
   
   // Create download link
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${sanitizeFilename(content.title)}.${options.format === 'pdf' ? 'txt' : options.format}`;
+  link.download = `${sanitizeFilename(content.title)}.${options.format}`;
   
   // Trigger download
   document.body.appendChild(link);
@@ -58,6 +61,82 @@ export const downloadDocument = async (docTitle: string, docType: string, format
   };
 
   await generatePDF(mockContent, { format, includeAnswers: true, includePoints: true });
+};
+
+// Simple PDF-like content generator (still text but better formatted)
+const generateSimplePDF = (content: QuizContent, options: DownloadOptions): string => {
+  let pdf = '';
+  
+  // PDF Header (simulate PDF structure)
+  pdf += `%PDF-1.4\n`;
+  pdf += `%âãÏÓ\n\n`;
+  
+  pdf += `1 0 obj\n`;
+  pdf += `<<\n`;
+  pdf += `/Type /Catalog\n`;
+  pdf += `/Pages 2 0 R\n`;
+  pdf += `>>\n`;
+  pdf += `endobj\n\n`;
+  
+  pdf += `2 0 obj\n`;
+  pdf += `<<\n`;
+  pdf += `/Type /Pages\n`;
+  pdf += `/Kids [3 0 R]\n`;
+  pdf += `/Count 1\n`;
+  pdf += `>>\n`;
+  pdf += `endobj\n\n`;
+  
+  // Content formatted as PDF text
+  const textContent = formatContentForPDF(content, options);
+  
+  pdf += `3 0 obj\n`;
+  pdf += `<<\n`;
+  pdf += `/Type /Page\n`;
+  pdf += `/Parent 2 0 R\n`;
+  pdf += `/MediaBox [0 0 612 792]\n`;
+  pdf += `/Contents 4 0 R\n`;
+  pdf += `>>\n`;
+  pdf += `endobj\n\n`;
+  
+  pdf += `4 0 obj\n`;
+  pdf += `<<\n`;
+  pdf += `/Length ${textContent.length}\n`;
+  pdf += `>>\n`;
+  pdf += `stream\n`;
+  pdf += `BT\n`;
+  pdf += `/F1 12 Tf\n`;
+  pdf += `72 720 Td\n`;
+  
+  // Add the formatted content line by line
+  const lines = textContent.split('\n');
+  lines.forEach((line, index) => {
+    const escapedLine = line.replace(/[()\\]/g, '\\$&');
+    pdf += `(${escapedLine}) Tj\n`;
+    pdf += `0 -15 Td\n`;
+  });
+  
+  pdf += `ET\n`;
+  pdf += `endstream\n`;
+  pdf += `endobj\n\n`;
+  
+  // PDF Footer
+  pdf += `xref\n`;
+  pdf += `0 5\n`;
+  pdf += `0000000000 65535 f \n`;
+  pdf += `0000000010 00000 n \n`;
+  pdf += `0000000053 00000 n \n`;
+  pdf += `0000000125 00000 n \n`;
+  pdf += `0000000209 00000 n \n`;
+  pdf += `trailer\n`;
+  pdf += `<<\n`;
+  pdf += `/Size 5\n`;
+  pdf += `/Root 1 0 R\n`;
+  pdf += `>>\n`;
+  pdf += `startxref\n`;
+  pdf += `${pdf.length - 50}\n`;
+  pdf += `%%EOF`;
+  
+  return pdf;
 };
 
 const formatContentForPDF = (content: QuizContent, options: DownloadOptions): string => {

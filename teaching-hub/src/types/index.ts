@@ -36,6 +36,12 @@ export interface Document {
   updatedAt: Date;
   userId: string;
   user?: User;
+  schoolInfo?: {
+    schoolName: string;
+    schoolAddress: string;
+    className: string;
+    date: string;
+  };
 }
 
 export interface Template {

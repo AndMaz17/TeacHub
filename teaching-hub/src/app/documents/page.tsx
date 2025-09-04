@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import { 
   Dialog,
   DialogContent,
@@ -21,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Search, 
   Filter,
@@ -33,7 +40,8 @@ import {
   Download,
   Share,
   Eye,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { useDocumentsStore } from '@/store/useDocumentsStore';
 import { DocumentPreviewModal } from '@/components/documents/document-preview-modal';
@@ -56,6 +64,20 @@ const typeColors = {
   MATERIAL: 'bg-gray-100 text-gray-800'
 };
 
+const subjectSuggestions = [
+  'Matematica', 'Italiano', 'Letteratura Italiana', 'Storia', 
+  'Geografia', 'Scienze', 'Fisica', 'Chimica', 'Biologia',
+  'Inglese', 'Francese', 'Spagnolo', 'Tedesco', 'Latino', 'Greco',
+  'Filosofia', 'Arte', 'Musica', 'Educazione Fisica', 'Tecnologia',
+  'Informatica', 'Economia', 'Diritto', 'Storia dell\'Arte'
+];
+
+const gradeSuggestions = [
+  '1° Elementare', '2° Elementare', '3° Elementare', '4° Elementare', '5° Elementare',
+  '1° Media', '2° Media', '3° Media',
+  '1° Superiore', '2° Superiore', '3° Superiore', '4° Superiore', '5° Superiore'
+];
+
 export default function DocumentsPage() {
   const {
     filteredDocuments,
@@ -63,11 +85,14 @@ export default function DocumentsPage() {
     filterType,
     filterDifficulty,
     filterSubject,
+    filterGrade,
     setSearchTerm,
     setFilterType,
     setFilterDifficulty,
     setFilterSubject,
-    clearFilters
+    setFilterGrade,
+    clearFilters,
+    deleteDocument
   } = useDocumentsStore();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -83,8 +108,9 @@ export default function DocumentsPage() {
     if (filterType !== 'ALL') count++;
     if (filterDifficulty !== 'ALL') count++;
     if (filterSubject.trim()) count++;
+    if (filterGrade.trim()) count++;
     setActiveFiltersCount(count);
-  }, [searchTerm, filterType, filterDifficulty, filterSubject]);
+  }, [searchTerm, filterType, filterDifficulty, filterSubject, filterGrade]);
 
   const handleStarClick = (docId: string, isStarred: boolean) => {
     toast.success(
@@ -113,6 +139,13 @@ export default function DocumentsPage() {
 
   const handleNewDocument = () => {
     setUploadOpen(true);
+  };
+
+  const handleDeleteDocument = (docId: string, title: string) => {
+    if (window.confirm(`Sei sicuro di voler eliminare il documento "${title}"? Questa azione non può essere annullata.`)) {
+      deleteDocument(docId);
+      toast.success(`Documento "${title}" eliminato con successo`);
+    }
   };
 
   return (
@@ -200,10 +233,21 @@ export default function DocumentsPage() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Materia</label>
-                  <Input 
-                    placeholder="Es. Matematica, Letteratura..."
+                  <Autocomplete
                     value={filterSubject}
-                    onChange={(e) => setFilterSubject(e.target.value)}
+                    onValueChange={setFilterSubject}
+                    suggestions={subjectSuggestions}
+                    placeholder="Es. Matematica, Letteratura..."
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Classe</label>
+                  <Autocomplete
+                    value={filterGrade}
+                    onValueChange={setFilterGrade}
+                    suggestions={gradeSuggestions}
+                    placeholder="Es. 3° Superiore, 2° Media..."
                   />
                 </div>
 
@@ -267,6 +311,15 @@ export default function DocumentsPage() {
                 />
               </Badge>
             )}
+            {filterGrade.trim() && (
+              <Badge variant="secondary" className="gap-1">
+                Classe: {filterGrade}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => setFilterGrade('')}
+                />
+              </Badge>
+            )}
           </div>
         )}
 
@@ -309,9 +362,22 @@ export default function DocumentsPage() {
                     >
                       <Star className="h-4 w-4 text-yellow-500" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Elimina
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
@@ -355,6 +421,7 @@ export default function DocumentsPage() {
                         size="sm" 
                         className="h-8 w-8 p-0"
                         onClick={() => handleShare(doc.id, doc.title)}
+                        title="Condividi documento"
                       >
                         <Share className="h-3 w-3" />
                       </Button>
@@ -363,6 +430,7 @@ export default function DocumentsPage() {
                         size="sm" 
                         className="h-8 w-8 p-0"
                         onClick={() => handleDownload(doc.id, doc.title)}
+                        title="Scarica come PDF"
                       >
                         <Download className="h-3 w-3" />
                       </Button>
