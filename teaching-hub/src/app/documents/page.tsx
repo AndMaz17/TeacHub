@@ -1,8 +1,26 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Search, 
   Filter,
@@ -13,56 +31,12 @@ import {
   MoreVertical,
   Star,
   Download,
-  Share
+  Share,
+  X
 } from 'lucide-react';
-
-// Mock data per testing
-const mockDocuments = [
-  {
-    id: '1',
-    title: 'Verifica Dante - Inferno Canti I-III',
-    type: 'QUIZ',
-    subject: 'Letteratura Italiana',
-    grade: '3° Superiore',
-    difficulty: 'MEDIUM',
-    tags: ['dante', 'inferno', 'letteratura'],
-    createdAt: new Date('2024-01-15'),
-    isStarred: true
-  },
-  {
-    id: '2',
-    title: 'Test Equazioni di Secondo Grado',
-    type: 'TEST',
-    subject: 'Matematica',
-    grade: '2° Superiore',
-    difficulty: 'HARD',
-    tags: ['equazioni', 'algebra'],
-    createdAt: new Date('2024-01-10'),
-    isStarred: false
-  },
-  {
-    id: '3',
-    title: 'Quiz Rivoluzione Francese',
-    type: 'QUIZ',
-    subject: 'Storia',
-    grade: '4° Superiore',
-    difficulty: 'EASY',
-    tags: ['rivoluzione', 'francia', 'storia moderna'],
-    createdAt: new Date('2024-01-08'),
-    isStarred: true
-  },
-  {
-    id: '4',
-    title: 'Materiale Didattico - Fotosintesi',
-    type: 'MATERIAL',
-    subject: 'Scienze',
-    grade: '1° Superiore',
-    difficulty: 'EASY',
-    tags: ['fotosintesi', 'biologia', 'piante'],
-    createdAt: new Date('2024-01-05'),
-    isStarred: false
-  }
-];
+import { useDocumentsStore } from '@/store/useDocumentsStore';
+import { DocumentType, Difficulty } from '@/types';
+import { toast } from 'sonner';
 
 const difficultyColors = {
   EASY: 'bg-green-100 text-green-800',
@@ -79,6 +53,50 @@ const typeColors = {
 };
 
 export default function DocumentsPage() {
+  const {
+    filteredDocuments,
+    searchTerm,
+    filterType,
+    filterDifficulty,
+    filterSubject,
+    setSearchTerm,
+    setFilterType,
+    setFilterDifficulty,
+    setFilterSubject,
+    clearFilters
+  } = useDocumentsStore();
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+
+  useEffect(() => {
+    let count = 0;
+    if (searchTerm.trim()) count++;
+    if (filterType !== 'ALL') count++;
+    if (filterDifficulty !== 'ALL') count++;
+    if (filterSubject.trim()) count++;
+    setActiveFiltersCount(count);
+  }, [searchTerm, filterType, filterDifficulty, filterSubject]);
+
+  const handleStarClick = (docId: string, isStarred: boolean) => {
+    toast.success(
+      isStarred ? 'Documento rimosso dai preferiti' : 'Documento aggiunto ai preferiti'
+    );
+  };
+
+  const handleDownload = (docId: string, title: string) => {
+    toast.success(`Download di "${title}" avviato`);
+  };
+
+  const handleShare = (docId: string, title: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/documents/${docId}`);
+    toast.success(`Link di "${title}" copiato negli appunti`);
+  };
+
+  const handleNewDocument = () => {
+    toast.success('Apertura creazione nuovo documento...');
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -89,12 +107,13 @@ export default function DocumentsPage() {
               Gestisci e organizza tutti i tuoi materiali didattici
             </p>
           </div>
-          <Button>
+          <Button onClick={handleNewDocument}>
             <Plus className="mr-2 h-4 w-4" />
             Nuovo Documento
           </Button>
         </div>
 
+        {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -102,17 +121,145 @@ export default function DocumentsPage() {
               <Input 
                 placeholder="Cerca nei tuoi documenti..." 
                 className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-          <Button variant="outline">
-            <Filter className="mr-2 h-4 w-4" />
-            Filtri
-          </Button>
+          
+          <Dialog open={showFilters} onOpenChange={setShowFilters}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="relative">
+                <Filter className="mr-2 h-4 w-4" />
+                Filtri
+                {activeFiltersCount > 0 && (
+                  <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Filtri Documenti</DialogTitle>
+                <DialogDescription>
+                  Filtra i tuoi documenti per trovare quello che cerchi
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Tipo Documento</label>
+                  <Select value={filterType} onValueChange={(value) => setFilterType(value as DocumentType | 'ALL')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tutti i tipi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Tutti i tipi</SelectItem>
+                      <SelectItem value={DocumentType.QUIZ}>Quiz</SelectItem>
+                      <SelectItem value={DocumentType.TEST}>Test</SelectItem>
+                      <SelectItem value={DocumentType.HOMEWORK}>Compiti</SelectItem>
+                      <SelectItem value={DocumentType.LESSON_PLAN}>Piani di Lezione</SelectItem>
+                      <SelectItem value={DocumentType.MATERIAL}>Materiali</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Difficoltà</label>
+                  <Select value={filterDifficulty} onValueChange={(value) => setFilterDifficulty(value as Difficulty | 'ALL')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tutte le difficoltà" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Tutte le difficoltà</SelectItem>
+                      <SelectItem value={Difficulty.EASY}>Facile</SelectItem>
+                      <SelectItem value={Difficulty.MEDIUM}>Medio</SelectItem>
+                      <SelectItem value={Difficulty.HARD}>Difficile</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Materia</label>
+                  <Input 
+                    placeholder="Es. Matematica, Letteratura..."
+                    value={filterSubject}
+                    onChange={(e) => setFilterSubject(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      clearFilters();
+                      toast.success('Filtri rimossi');
+                    }}
+                    className="flex-1"
+                  >
+                    Pulisci Filtri
+                  </Button>
+                  <Button onClick={() => setShowFilters(false)} className="flex-1">
+                    Applica
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
+        {/* Active Filters Display */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg">
+            <span className="text-sm text-gray-600 font-medium">Filtri attivi:</span>
+            {searchTerm.trim() && (
+              <Badge variant="secondary" className="gap-1">
+                Cerca: "{searchTerm}"
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => setSearchTerm('')}
+                />
+              </Badge>
+            )}
+            {filterType !== 'ALL' && (
+              <Badge variant="secondary" className="gap-1">
+                Tipo: {filterType}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => setFilterType('ALL')}
+                />
+              </Badge>
+            )}
+            {filterDifficulty !== 'ALL' && (
+              <Badge variant="secondary" className="gap-1">
+                Difficoltà: {filterDifficulty}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => setFilterDifficulty('ALL')}
+                />
+              </Badge>
+            )}
+            {filterSubject.trim() && (
+              <Badge variant="secondary" className="gap-1">
+                Materia: {filterSubject}
+                <X 
+                  className="h-3 w-3 cursor-pointer" 
+                  onClick={() => setFilterSubject('')}
+                />
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Results Count */}
+        <div className="text-sm text-gray-600">
+          Trovati {filteredDocuments.length} documenti
+        </div>
+
+        {/* Documents Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockDocuments.map((doc) => (
+          {filteredDocuments.map((doc) => (
             <Card key={doc.id} className="hover:shadow-lg transition-shadow duration-200">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -123,23 +270,28 @@ export default function DocumentsPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <Badge 
                         variant="secondary" 
-                        className={typeColors[doc.type as keyof typeof typeColors]}
+                        className={typeColors[doc.type]}
                       >
                         {doc.type}
                       </Badge>
                       <Badge 
                         variant="secondary" 
-                        className={difficultyColors[doc.difficulty as keyof typeof difficultyColors]}
+                        className={difficultyColors[doc.difficulty]}
                       >
                         {doc.difficulty}
                       </Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    {doc.isStarred && (
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                    )}
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleStarClick(doc.id, false)}
+                    >
+                      <Star className="h-4 w-4 text-yellow-500" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </div>
@@ -171,10 +323,20 @@ export default function DocumentsPage() {
                       {doc.createdAt.toLocaleDateString('it-IT')}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleShare(doc.id, doc.title)}
+                      >
                         <Share className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleDownload(doc.id, doc.title)}
+                      >
                         <Download className="h-3 w-3" />
                       </Button>
                     </div>
@@ -185,11 +347,28 @@ export default function DocumentsPage() {
           ))}
         </div>
 
-        <div className="flex justify-center">
-          <Button variant="outline">
-            Carica Altri Documenti
-          </Button>
-        </div>
+        {filteredDocuments.length === 0 && (
+          <div className="text-center py-12">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Nessun documento trovato
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Prova a modificare i filtri o a cercare con termini diversi
+            </p>
+            <Button variant="outline" onClick={clearFilters}>
+              Rimuovi tutti i filtri
+            </Button>
+          </div>
+        )}
+
+        {filteredDocuments.length > 0 && (
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={() => toast.info('Funzione in arrivo!')}>
+              Carica Altri Documenti
+            </Button>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

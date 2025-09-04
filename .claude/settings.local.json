@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub/**)",
+      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub\\src\\app\\generator/**)",
+      "Read(/D:\\Progetti\\AndMaz\\TeachingHub\\TeacHub\\teaching-hub/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +20,87 @@ import {
   Users,
   Sparkles
 } from 'lucide-react';
+import { QuizModal } from '@/components/generator/quiz-modal';
+import { toast } from 'sonner';
 
 export default function GeneratorPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'literature' | 'stem' | 'quick'>('literature');
+  const [modalPresetSubject, setModalPresetSubject] = useState<string>('');
+
+  // Form state for custom generator
+  const [customForm, setCustomForm] = useState({
+    subject: '',
+    topic: '',
+    grade: '',
+    difficulty: 'Medio',
+    questions: 10,
+    time: 60,
+    instructions: ''
+  });
+
+  const handleQuickGenerate = (type: 'literature' | 'stem' | 'quick', presetSubject?: string) => {
+    setModalType(type);
+    setModalPresetSubject(presetSubject || '');
+    setModalOpen(true);
+  };
+
+  const handleCustomGenerate = () => {
+    if (!customForm.subject || !customForm.topic) {
+      toast.error('Compila almeno Materia e Argomento');
+      return;
+    }
+
+    // Determine the best type based on subject
+    let type: 'literature' | 'stem' | 'quick' = 'quick';
+    const subject = customForm.subject.toLowerCase();
+    
+    if (subject.includes('letteratura') || subject.includes('italiano') || subject.includes('storia') || subject.includes('filosofia')) {
+      type = 'literature';
+    } else if (subject.includes('matematica') || subject.includes('fisica') || subject.includes('chimica') || subject.includes('scienze')) {
+      type = 'stem';
+    }
+
+    setModalType(type);
+    setModalPresetSubject(customForm.subject);
+    setModalOpen(true);
+  };
+
+  const handleSaveTemplate = () => {
+    if (!customForm.subject || !customForm.topic) {
+      toast.error('Compila almeno Materia e Argomento per salvare il template');
+      return;
+    }
+
+    toast.success(`Template "${customForm.subject} - ${customForm.topic}" salvato`);
+    
+    // Clear form
+    setCustomForm({
+      subject: '',
+      topic: '',
+      grade: '',
+      difficulty: 'Medio',
+      questions: 10,
+      time: 60,
+      instructions: ''
+    });
+  };
+
+  const handleTemplateClick = (templateName: string, subject: string) => {
+    toast.info(`Caricamento template "${templateName}"...`);
+    
+    // Simulate loading template data
+    setTimeout(() => {
+      if (subject === 'Letteratura') {
+        handleQuickGenerate('literature', 'Letteratura Italiana');
+      } else if (subject === 'Matematica') {
+        handleQuickGenerate('stem', 'Matematica');
+      } else {
+        handleQuickGenerate('quick', subject);
+      }
+    }, 500);
+  };
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -35,7 +117,7 @@ export default function GeneratorPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleQuickGenerate('literature')}>
             <CardHeader className="text-center">
               <BookOpen className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <CardTitle>Materie Letterarie</CardTitle>
@@ -49,14 +131,14 @@ export default function GeneratorPage() {
                 <Badge variant="secondary">Manzoni</Badge>
                 <Badge variant="secondary">Analisi</Badge>
               </div>
-              <Button className="w-full">
+              <Button className="w-full" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('literature'); }}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 Genera Verifica
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleQuickGenerate('stem')}>
             <CardHeader className="text-center">
               <Brain className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <CardTitle>Materie STEM</CardTitle>
@@ -70,14 +152,14 @@ export default function GeneratorPage() {
                 <Badge variant="secondary">Fisica</Badge>
                 <Badge variant="secondary">Chimica</Badge>
               </div>
-              <Button className="w-full">
+              <Button className="w-full" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('stem'); }}>
                 <Target className="mr-2 h-4 w-4" />
                 Genera Esercizi
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleQuickGenerate('quick')}>
             <CardHeader className="text-center">
               <Lightbulb className="h-12 w-12 text-purple-600 mx-auto mb-4" />
               <CardTitle>Quiz Rapidi</CardTitle>
@@ -91,7 +173,7 @@ export default function GeneratorPage() {
                 <Badge variant="secondary">Geografia</Badge>
                 <Badge variant="secondary">Scienze</Badge>
               </div>
-              <Button className="w-full">
+              <Button className="w-full" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('quick'); }}>
                 <Clock className="mr-2 h-4 w-4" />
                 Quiz Veloce
               </Button>
@@ -117,6 +199,8 @@ export default function GeneratorPage() {
                   <Input 
                     id="subject" 
                     placeholder="Es. Letteratura Italiana, Matematica..."
+                    value={customForm.subject}
+                    onChange={(e) => setCustomForm({ ...customForm, subject: e.target.value })}
                   />
                 </div>
                 <div>
@@ -124,6 +208,8 @@ export default function GeneratorPage() {
                   <Input 
                     id="topic" 
                     placeholder="Es. Dante Inferno, Equazioni di 2° grado..."
+                    value={customForm.topic}
+                    onChange={(e) => setCustomForm({ ...customForm, topic: e.target.value })}
                   />
                 </div>
                 <div>
@@ -131,6 +217,8 @@ export default function GeneratorPage() {
                   <Input 
                     id="grade" 
                     placeholder="Es. 3° Superiore, Università..."
+                    value={customForm.grade}
+                    onChange={(e) => setCustomForm({ ...customForm, grade: e.target.value })}
                   />
                 </div>
               </div>
@@ -138,7 +226,11 @@ export default function GeneratorPage() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="difficulty">Difficoltà</Label>
-                  <select className="w-full p-2 border rounded-md">
+                  <select 
+                    className="w-full p-2 border rounded-md"
+                    value={customForm.difficulty}
+                    onChange={(e) => setCustomForm({ ...customForm, difficulty: e.target.value })}
+                  >
                     <option>Facile</option>
                     <option>Medio</option>
                     <option>Difficile</option>
@@ -150,9 +242,10 @@ export default function GeneratorPage() {
                   <Input 
                     id="questions" 
                     type="number" 
-                    placeholder="10" 
                     min="1" 
                     max="50"
+                    value={customForm.questions}
+                    onChange={(e) => setCustomForm({ ...customForm, questions: parseInt(e.target.value) || 10 })}
                   />
                 </div>
                 <div>
@@ -160,9 +253,10 @@ export default function GeneratorPage() {
                   <Input 
                     id="time" 
                     type="number" 
-                    placeholder="60" 
                     min="10" 
                     max="180"
+                    value={customForm.time}
+                    onChange={(e) => setCustomForm({ ...customForm, time: parseInt(e.target.value) || 60 })}
                   />
                 </div>
               </div>
@@ -174,15 +268,17 @@ export default function GeneratorPage() {
                 id="instructions"
                 placeholder="Aggiungi istruzioni specifiche per l'AI: stile delle domande, riferimenti particolari, formato desiderato..."
                 rows={3}
+                value={customForm.instructions}
+                onChange={(e) => setCustomForm({ ...customForm, instructions: e.target.value })}
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="flex-1">
+              <Button size="lg" className="flex-1" onClick={handleCustomGenerate}>
                 <Wand2 className="mr-2 h-5 w-5" />
                 Genera Verifica con AI
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleSaveTemplate}>
                 <FileText className="mr-2 h-5 w-5" />
                 Salva come Template
               </Button>
@@ -202,7 +298,10 @@ export default function GeneratorPage() {
           </CardHeader>
           <CardContent>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+              <div 
+                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => handleTemplateClick('Verifica Dante', 'Letteratura')}
+              >
                 <h4 className="font-semibold mb-2">Verifica Dante</h4>
                 <p className="text-sm text-gray-600 mb-3">Comprensione Inferno I-III</p>
                 <div className="flex justify-between items-center">
@@ -211,7 +310,10 @@ export default function GeneratorPage() {
                 </div>
               </div>
 
-              <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+              <div 
+                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => handleTemplateClick('Quiz Storia', 'Storia')}
+              >
                 <h4 className="font-semibold mb-2">Quiz Storia</h4>
                 <p className="text-sm text-gray-600 mb-3">Rivoluzione Francese</p>
                 <div className="flex justify-between items-center">
@@ -220,7 +322,10 @@ export default function GeneratorPage() {
                 </div>
               </div>
 
-              <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+              <div 
+                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => handleTemplateClick('Test Matematica', 'Matematica')}
+              >
                 <h4 className="font-semibold mb-2">Test Matematica</h4>
                 <p className="text-sm text-gray-600 mb-3">Equazioni 2° grado</p>
                 <div className="flex justify-between items-center">
@@ -232,6 +337,13 @@ export default function GeneratorPage() {
           </CardContent>
         </Card>
       </div>
+
+      <QuizModal 
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        type={modalType}
+        presetSubject={modalPresetSubject}
+      />
     </MainLayout>
   );
 }
