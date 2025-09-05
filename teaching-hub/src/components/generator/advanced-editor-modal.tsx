@@ -154,10 +154,24 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
     }
     
     // Altrimenti parsa il testo per estrarre i contenuti
-    const parts = text.split(/(\[LATEX\].*?\[\/LATEX\]|\[IMAGE\].*?\[\/IMAGE\])/);
+    // Usa regex più robusta per catturare anche contenuti molto lunghi (come le immagini base64)
+    const parts = text.split(/(\[LATEX\][\s\S]*?\[\/LATEX\]|\[IMAGE\][\s\S]*?\[\/IMAGE\])/g);
+    
+    let textContent = '';
     
     for (const part of parts) {
       if (part.startsWith('[LATEX]') && part.endsWith('[/LATEX]')) {
+        // Prima aggiungi il testo accumulato se esiste
+        if (textContent.trim()) {
+          contents.push({
+            type: 'text',
+            content: textContent.trim(),
+            id: currentId.toString()
+          });
+          currentId++;
+          textContent = '';
+        }
+        
         const latexContent = part.replace(/\[LATEX\]|\[\/LATEX\]/g, '');
         if (latexContent.trim()) {
           contents.push({
@@ -168,6 +182,17 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
           currentId++;
         }
       } else if (part.startsWith('[IMAGE]') && part.endsWith('[/IMAGE]')) {
+        // Prima aggiungi il testo accumulato se esiste
+        if (textContent.trim()) {
+          contents.push({
+            type: 'text',
+            content: textContent.trim(),
+            id: currentId.toString()
+          });
+          currentId++;
+          textContent = '';
+        }
+        
         const imageContent = part.replace(/\[IMAGE\]|\[\/IMAGE\]/g, '');
         if (imageContent.trim()) {
           contents.push({
@@ -178,21 +203,18 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
           currentId++;
         }
       } else if (part.trim()) {
-        // Aggiungi il contenuto di testo solo se non è vuoto
-        const existingTextIndex = contents.findIndex(c => c.type === 'text');
-        if (existingTextIndex >= 0) {
-          // Se esiste già un contenuto di testo, aggiungilo
-          contents[existingTextIndex].content += part;
-        } else {
-          // Altrimenti crea un nuovo contenuto di testo
-          contents.push({
-            type: 'text',
-            content: part,
-            id: currentId.toString()
-          });
-          currentId++;
-        }
+        // Accumula il contenuto di testo
+        textContent += part;
       }
+    }
+    
+    // Aggiungi l'ultimo contenuto di testo se esiste
+    if (textContent.trim()) {
+      contents.push({
+        type: 'text',
+        content: textContent.trim(),
+        id: currentId.toString()
+      });
     }
     
     // Se non ci sono contenuti, aggiungi un testo base vuoto
@@ -445,11 +467,13 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
         )}
         
         {item.type === 'image' && (
-          <img 
-            src={item.content} 
-            alt="Contenuto" 
-            className="max-w-full h-auto max-h-32 object-contain border rounded"
-          />
+          <div className="w-full max-w-sm mx-auto">
+            <img 
+              src={item.content} 
+              alt="Contenuto" 
+              className="w-full h-auto max-h-32 object-contain border rounded"
+            />
+          </div>
         )}
       </div>
     ));
@@ -457,7 +481,7 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="!max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5 text-blue-600" />
@@ -468,14 +492,14 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1 overflow-hidden">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="editor">Editor Contenuti</TabsTrigger>
             <TabsTrigger value="math">Formule Matematiche</TabsTrigger>
             <TabsTrigger value="preview">Anteprima</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="editor" className="space-y-4">
+          <TabsContent value="editor" className="space-y-4 flex-1 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Panel - Content Editor */}
               <div className="space-y-4">
@@ -542,7 +566,7 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
                       Contenuti Aggiunti
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="max-h-96 overflow-y-auto">
+                  <CardContent className="max-h-96 overflow-y-auto overflow-x-hidden">
                     {richContent.length > 0 ? (
                       renderContentPreview(true)
                     ) : (
@@ -554,7 +578,7 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
             </div>
           </TabsContent>
 
-          <TabsContent value="math" className="space-y-4">
+          <TabsContent value="math" className="space-y-4 flex-1 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Math Toolbar */}
               <div className="space-y-4">
@@ -635,7 +659,7 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="space-y-4">
+          <TabsContent value="preview" className="space-y-4 flex-1 overflow-y-auto">
             <Card>
               <CardHeader>
                 <CardTitle>Anteprima Finale Domanda</CardTitle>

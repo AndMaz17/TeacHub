@@ -82,6 +82,14 @@ export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalPro
   
   const { generateQuiz, isGenerating } = useAI();
   const { addDocument } = useDocumentsStore();
+  
+  // Funzione per processare il testo e renderizzarlo in modo user-friendly
+  const processQuestionText = (text: string) => {
+    // Rimuovi i tag IMAGE e LATEX e sostituiscili con indicatori
+    return text
+      .replace(/\[IMAGE\][^[]*\[\/IMAGE\]/g, '📷 [Immagine allegata]')
+      .replace(/\[LATEX\]([^[]*)\[\/LATEX\]/g, '🧮 [$1]');
+  };
 
   const renderLatex = (latex: string) => {
     // Rendering che emula lo stile KaTeX con stili inline (stesso del advanced editor)
@@ -544,10 +552,18 @@ export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalPro
           </CardContent>
         </Card>
 
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div 
+          className="space-y-4 max-h-96 overflow-y-auto overflow-x-hidden"
+          style={{
+            maxWidth: '100%',
+            overflowX: 'hidden',
+            wordWrap: 'break-word',
+            overflowWrap: 'anywhere'
+          }}
+        >
           {currentQuiz.questions.map((question, index) => (
-            <Card key={question.id}>
-              <CardContent className="pt-6">
+            <Card key={question.id} className="w-full" style={{ maxWidth: '100%', minWidth: 0 }}>
+              <CardContent className="pt-6 overflow-hidden" style={{ maxWidth: '100%', minWidth: 0 }}>
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="font-medium">Domanda {index + 1}</h4>
                   <div className="flex items-center gap-2">
@@ -578,16 +594,25 @@ export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalPro
                 </div>
                 
                 {isEditing ? (
-                  <Textarea
-                    value={question.text}
-                    onChange={(e) => updateQuestionText(question.id, e.target.value)}
-                    className="mb-3 min-h-[80px]"
-                    placeholder="Testo della domanda..."
-                  />
+                  <div className="mb-3 w-full max-w-full">
+                    <Textarea
+                      value={question.text}
+                      onChange={(e) => updateQuestionText(question.id, e.target.value)}
+                      className="min-h-[80px] w-full resize-none overflow-hidden"
+                      placeholder="Testo della domanda..."
+                      style={{ 
+                        wordWrap: 'break-word', 
+                        overflowWrap: 'anywhere',
+                        whiteSpace: 'pre-wrap',
+                        maxWidth: '100%',
+                        width: '100%'
+                      }}
+                    />
+                  </div>
                 ) : (
-                  <div className="text-sm text-gray-700 mb-3">
+                  <div className="text-sm text-gray-700 mb-3 max-w-full overflow-hidden">
                     {question.richContent && question.richContent.length > 0 ? (
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-w-full overflow-hidden">
                         {question.richContent.map((content, idx) => (
                           <div key={content.id}>
                             {content.type === 'text' && <p>{content.content}</p>}
@@ -601,17 +626,21 @@ export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalPro
                               </div>
                             )}
                             {content.type === 'image' && (
-                              <img 
-                                src={content.content} 
-                                alt="Contenuto domanda" 
-                                className="max-w-full h-auto max-h-32 object-contain border rounded"
-                              />
+                              <div className="w-full max-w-xs mx-auto my-2">
+                                <img 
+                                  src={content.content} 
+                                  alt="Contenuto domanda" 
+                                  className="w-full h-auto max-h-24 object-contain border rounded"
+                                />
+                              </div>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p>{question.text}</p>
+                      <p className="break-words overflow-hidden max-w-full whitespace-pre-wrap">
+                        {processQuestionText(question.text)}
+                      </p>
                     )}
                   </div>
                 )}
@@ -687,7 +716,16 @@ export function QuizModal({ isOpen, onClose, type, presetSubject }: QuizModalPro
   return (
     <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden" 
+        style={{ 
+          maxWidth: '80vw', 
+          width: '80vw',
+          overflowX: 'hidden',
+          wordWrap: 'break-word',
+          overflowWrap: 'anywhere'
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{getModalTitle()}</DialogTitle>
           <DialogDescription>
