@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Wand2, 
-  BookOpen,
-  Brain,
   Lightbulb,
-  Target,
   Clock,
-  Sparkles
+  Sparkles,
+  CheckCircle,
+  Zap,
+  Brain,
+  FileCheck
 } from 'lucide-react';
 import { QuizModal } from '@/components/generator/quiz-modal';
 
@@ -42,69 +43,110 @@ export default function GeneratorPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleQuickGenerate('literature')}>
-            <CardHeader className="text-center">
-              <BookOpen className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <CardTitle>Materie Letterarie</CardTitle>
-              <CardDescription>
-                Comprensione del testo, analisi letteraria, domande aperte
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-300 flex flex-col h-full" onClick={() => handleQuickGenerate('literature')}>
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto mb-4 p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center">
+                <Wand2 className="h-10 w-10 text-white" />
+              </div>
+              <CardTitle className="text-xl">Generatore Verifiche</CardTitle>
+              <CardDescription className="text-base">
+                Editor avanzato per tutte le materie con supporto formule, immagini e contenuti ricchi
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">Dante</Badge>
-                <Badge variant="secondary">Manzoni</Badge>
-                <Badge variant="secondary">Analisi</Badge>
+            <CardContent className="flex-1 flex flex-col justify-end">
+              <div className="flex flex-wrap gap-2 mb-6">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">Letterature</Badge>
+                <Badge variant="secondary" className="bg-green-100 text-green-800">STEM</Badge>
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800">Matematica</Badge>
+                <Badge variant="secondary" className="bg-orange-100 text-orange-800">Scienze</Badge>
+                <Badge variant="secondary" className="bg-red-100 text-red-800">Storia</Badge>
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">+Altro</Badge>
               </div>
-              <Button className="w-full" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('literature'); }}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Genera Verifica
+              <Button className="w-full h-12 text-base font-semibold mt-auto" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('literature'); }}>
+                <Sparkles className="mr-3 h-5 w-5" />
+                Crea Verifica Personalizzata
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleQuickGenerate('stem')}>
-            <CardHeader className="text-center">
-              <Brain className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <CardTitle>Materie STEM</CardTitle>
-              <CardDescription>
-                Problemi parametrizzati, esercizi matematici, formule
+          <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-300 flex flex-col h-full" onClick={() => handleQuickGenerate('quick')}>
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto mb-4 p-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full w-20 h-20 flex items-center justify-center">
+                <Clock className="h-10 w-10 text-white" />
+              </div>
+              <CardTitle className="text-xl">Quiz Rapidi</CardTitle>
+              <CardDescription className="text-base">
+                Test veloci a risposta multipla per valutazioni immediate
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">Equazioni</Badge>
-                <Badge variant="secondary">Fisica</Badge>
-                <Badge variant="secondary">Chimica</Badge>
+            <CardContent className="flex-1 flex flex-col justify-end">
+              <div className="flex flex-wrap gap-2 mb-6">
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800">Multiple Choice</Badge>
+                <Badge variant="secondary" className="bg-pink-100 text-pink-800">Vero/Falso</Badge>
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">15 minuti</Badge>
+                <Badge variant="secondary" className="bg-cyan-100 text-cyan-800">Auto-corretto</Badge>
               </div>
-              <Button className="w-full" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('stem'); }}>
-                <Target className="mr-2 h-4 w-4" />
-                Genera Esercizi
+              <Button className="w-full h-12 text-base font-semibold mt-auto" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('quick'); }}>
+                <Lightbulb className="mr-3 h-5 w-5" />
+                Genera Quiz Veloce
               </Button>
             </CardContent>
           </Card>
+        </div>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleQuickGenerate('quick')}>
-            <CardHeader className="text-center">
-              <Lightbulb className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <CardTitle>Quiz Rapidi</CardTitle>
-              <CardDescription>
-                Domande a risposta multipla, vero/falso, test veloci
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="secondary">Storia</Badge>
-                <Badge variant="secondary">Geografia</Badge>
-                <Badge variant="secondary">Scienze</Badge>
+        {/* Sezione Informativa */}
+        <div className="mt-8 max-w-5xl mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Perché usare il nostro Generatore AI?
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Rivoluziona il tuo modo di creare verifiche con l'intelligenza artificiale.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center group">
+              <div className="mx-auto mb-3 p-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Zap className="h-6 w-6 text-white" />
               </div>
-              <Button className="w-full" onClick={(e) => { e.stopPropagation(); handleQuickGenerate('quick'); }}>
-                <Clock className="mr-2 h-4 w-4" />
-                Quiz Veloce
-              </Button>
-            </CardContent>
-          </Card>
+              <h3 className="font-semibold text-gray-900 mb-1 text-sm">Velocità Incredibile</h3>
+              <p className="text-xs text-gray-600">
+                Genera verifiche in <strong>30 secondi</strong>
+              </p>
+            </div>
+
+            <div className="text-center group">
+              <div className="mx-auto mb-3 p-2 bg-gradient-to-br from-blue-400 to-cyan-600 rounded-full w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Brain className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1 text-sm">Contenuti Intelligenti</h3>
+              <p className="text-xs text-gray-600">
+                <strong>Difficoltà automatica</strong> per ogni livello
+              </p>
+            </div>
+
+            <div className="text-center group">
+              <div className="mx-auto mb-3 p-2 bg-gradient-to-br from-purple-400 to-violet-600 rounded-full w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <FileCheck className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1 text-sm">Editor Avanzato</h3>
+              <p className="text-xs text-gray-600">
+                <strong>Formule e immagini</strong> integrate
+              </p>
+            </div>
+
+            <div className="text-center group">
+              <div className="mx-auto mb-3 p-2 bg-gradient-to-br from-orange-400 to-red-600 rounded-full w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1 text-sm">Qualità Garantita</h3>
+              <p className="text-xs text-gray-600">
+                Contenuti <strong>ministeriali</strong> italiani
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

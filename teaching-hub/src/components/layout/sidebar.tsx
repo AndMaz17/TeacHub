@@ -46,7 +46,7 @@ const MiniCalendar = () => {
       {/* Header giorni settimana */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {weekDays.map((day, index) => (
-          <div key={index} className="text-center text-gray-500 font-medium py-1">
+          <div key={index} className="text-center text-gray-500 font-semibold py-1 text-[9px]">
             {day}
           </div>
         ))}
@@ -58,12 +58,12 @@ const MiniCalendar = () => {
           <div
             key={index}
             className={cn(
-              "text-center py-1 rounded",
-              day ? "hover:bg-gray-100 cursor-pointer" : "",
+              "text-center py-1 rounded transition-all duration-200 min-h-[20px] flex items-center justify-center text-[10px]",
+              day ? "hover:bg-gray-200 cursor-pointer" : "",
               day === currentDate
-                ? "bg-blue-600 text-white font-semibold"
+                ? "bg-blue-500 text-white font-bold"
                 : day
-                ? "text-gray-700"
+                ? "text-gray-600 hover:text-gray-800"
                 : ""
             )}
           >
@@ -121,10 +121,10 @@ export function Sidebar() {
       </div>
 
       <div className="flex-shrink-0 p-4">
-        <div className="bg-white rounded-lg border shadow-sm">
-          <div className="flex items-center justify-center py-2 border-b bg-gray-50 rounded-t-lg">
-            <Calendar className="h-4 w-4 text-gray-600 mr-2" />
-            <span className="text-sm font-medium text-gray-700">
+        <div className="bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-center py-2 border-b border-gray-200 bg-gray-100 rounded-t-lg">
+            <Calendar className="h-3 w-3 text-gray-500 mr-2" />
+            <span className="text-xs font-medium text-gray-600 capitalize">
               {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
             </span>
           </div>
