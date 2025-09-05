@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ import {
   Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Question } from '@/types';
+import { Question, RichContent } from '@/types';
 
 // Rendering semplificato che riproduce l'aspetto KaTeX
 
@@ -35,12 +35,6 @@ interface AdvancedEditorModalProps {
   onClose: () => void;
   question: Question;
   onSave: (updatedQuestion: Question) => void;
-}
-
-interface RichContent {
-  type: 'text' | 'latex' | 'image' | 'table';
-  content: string;
-  id: string;
 }
 
 const mathSymbolCategories = {
@@ -146,13 +140,90 @@ const mathSymbolCategories = {
 
 export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: AdvancedEditorModalProps) {
   const [editedQuestion, setEditedQuestion] = useState<Question>(question);
-  const [richContent, setRichContent] = useState<RichContent[]>([
-    { type: 'text', content: question.text, id: '1' }
-  ]);
+  
+  // Funzione per parsare il testo esistente e ricostruire i rich content
+  const parseExistingContent = (text: string): RichContent[] => {
+    if (!text) return [{ type: 'text', content: '', id: '1' }];
+    
+    const contents: RichContent[] = [];
+    let currentId = 1;
+    
+    // Se la domanda ha già richContent salvato, usalo
+    if (question.richContent && question.richContent.length > 0) {
+      return question.richContent;
+    }
+    
+    // Altrimenti parsa il testo per estrarre i contenuti
+    const parts = text.split(/(\[LATEX\].*?\[\/LATEX\]|\[IMAGE\].*?\[\/IMAGE\])/);
+    
+    for (const part of parts) {
+      if (part.startsWith('[LATEX]') && part.endsWith('[/LATEX]')) {
+        const latexContent = part.replace(/\[LATEX\]|\[\/LATEX\]/g, '');
+        if (latexContent.trim()) {
+          contents.push({
+            type: 'latex',
+            content: latexContent,
+            id: currentId.toString()
+          });
+          currentId++;
+        }
+      } else if (part.startsWith('[IMAGE]') && part.endsWith('[/IMAGE]')) {
+        const imageContent = part.replace(/\[IMAGE\]|\[\/IMAGE\]/g, '');
+        if (imageContent.trim()) {
+          contents.push({
+            type: 'image',
+            content: imageContent,
+            id: currentId.toString()
+          });
+          currentId++;
+        }
+      } else if (part.trim()) {
+        // Aggiungi il contenuto di testo solo se non è vuoto
+        const existingTextIndex = contents.findIndex(c => c.type === 'text');
+        if (existingTextIndex >= 0) {
+          // Se esiste già un contenuto di testo, aggiungilo
+          contents[existingTextIndex].content += part;
+        } else {
+          // Altrimenti crea un nuovo contenuto di testo
+          contents.push({
+            type: 'text',
+            content: part,
+            id: currentId.toString()
+          });
+          currentId++;
+        }
+      }
+    }
+    
+    // Se non ci sono contenuti, aggiungi un testo base vuoto
+    if (contents.length === 0) {
+      contents.push({ type: 'text', content: '', id: '1' });
+    }
+    
+    // Assicurati che ci sia sempre almeno un elemento di testo come primo
+    const textContentIndex = contents.findIndex(c => c.type === 'text');
+    if (textContentIndex === -1) {
+      contents.unshift({ type: 'text', content: '', id: '0' });
+    } else if (textContentIndex !== 0) {
+      // Sposta il contenuto di testo all'inizio
+      const textContent = contents.splice(textContentIndex, 1)[0];
+      contents.unshift(textContent);
+    }
+    
+    return contents;
+  };
+  
+  const [richContent, setRichContent] = useState<RichContent[]>(parseExistingContent(question.text));
   const [activeTab, setActiveTab] = useState('editor');
   const [latexInput, setLatexInput] = useState('');
   const [latexPreview, setLatexPreview] = useState('');
   const [activeSymbolCategory, setActiveSymbolCategory] = useState('Operazioni Base');
+
+  // Aggiorna i contenuti quando la domanda cambia
+  useEffect(() => {
+    setEditedQuestion(question);
+    setRichContent(parseExistingContent(question.text));
+  }, [question]);
 
   const renderLatex = useCallback((latex: string) => {
     // Rendering che emula lo stile KaTeX con stili inline
@@ -341,17 +412,19 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
     onClose();
   };
 
-  const renderContentPreview = () => {
+  const renderContentPreview = (showRemoveButtons = true) => {
     return richContent.map((item, index) => (
       <div key={item.id} className="relative group border border-gray-200 rounded-lg p-3 mb-3">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => removeContent(item.id)}
-        >
-          <X className="h-3 w-3" />
-        </Button>
+        {showRemoveButtons && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => removeContent(item.id)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
         
         <div className="text-xs text-gray-500 mb-2 font-semibold">
           {item.type === 'text' && 'Testo'}
@@ -471,7 +544,7 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
                   </CardHeader>
                   <CardContent className="max-h-96 overflow-y-auto">
                     {richContent.length > 0 ? (
-                      renderContentPreview()
+                      renderContentPreview(true)
                     ) : (
                       <p className="text-gray-500 text-sm">Nessun contenuto aggiunto ancora</p>
                     )}
@@ -558,18 +631,6 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Esempi Formule</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <code className="block bg-gray-100 p-1 rounded">{'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}'}</code>
-                      <code className="block bg-gray-100 p-1 rounded">{'\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}'}</code>
-                      <code className="block bg-gray-100 p-1 rounded">{'\\lim_{n \\to \\infty} \\left(1 + \\frac{1}{n}\\right)^n = e'}</code>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
           </TabsContent>
@@ -585,7 +646,7 @@ export function AdvancedEditorModal({ isOpen, onClose, question, onSave }: Advan
                     DOMANDA (Punti: {editedQuestion.points})
                   </div>
                   <div className="space-y-4">
-                    {renderContentPreview()}
+                    {renderContentPreview(false)}
                   </div>
                   
                   {editedQuestion.type === 'multiple_choice' && editedQuestion.options && (
