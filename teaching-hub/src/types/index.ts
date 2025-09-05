@@ -60,6 +60,12 @@ export interface Template {
   user?: User;
 }
 
+export interface RichContent {
+  type: 'text' | 'latex' | 'image' | 'table';
+  content: string;
+  id: string;
+}
+
 export interface Question {
   id: string;
   text: string;
@@ -67,6 +73,7 @@ export interface Question {
   options?: string[];
   correctAnswer?: string | number;
   points: number;
+  richContent?: RichContent[];
 }
 
 export interface QuizContent {

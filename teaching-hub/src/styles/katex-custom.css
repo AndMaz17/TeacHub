@@ -1,0 +1,54 @@
+/* Stili che emulano KaTeX originale */
+.katex-display {
+  font-family: 'KaTeX_Main', 'Times New Roman', serif;
+  font-size: 1.2em;
+  display: inline-block;
+  text-align: center;
+  margin: 0;
+}
+
+.katex-frac {
+  display: inline-block;
+  vertical-align: middle;
+  text-align: center;
+  margin: 0 0.2em;
+}
+
+.katex-frac-num {
+  display: block;
+  font-size: 0.8em;
+  line-height: 1;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 0.1em;
+}
+
+.katex-frac-line {
+  display: none;
+}
+
+.katex-frac-den {
+  display: block;
+  font-size: 0.8em;
+  line-height: 1;
+  padding-top: 0.1em;
+}
+
+.katex-overline {
+  border-top: 1px solid currentColor;
+  padding-top: 0.1em;
+}
+
+.katex-large {
+  font-size: 1.4em;
+  vertical-align: middle;
+}
+
+/* Stili per i simboli nei pulsanti */
+.katex-symbol-btn .katex-display {
+  font-size: 1.1em;
+  color: #374151;
+}
+
+.katex-symbol-btn:hover .katex-display {
+  color: #1f2937;
+}

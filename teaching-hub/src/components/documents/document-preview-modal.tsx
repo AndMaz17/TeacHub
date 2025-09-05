@@ -13,7 +13,7 @@ import { Loader2, Eye, Download, Share, Star, Printer, Edit, Save } from 'lucide
 import { useActivityStore } from '@/store/useActivityStore';
 import { useDocumentsStore } from '@/store/useDocumentsStore';
 import { DocumentType } from '@/types';
-import { downloadDocument } from '@/utils/downloadUtils';
+import { downloadDocument, generatePDF } from '@/utils/downloadUtils';
 import { QuizContent } from '@/types';
 import { toast } from 'sonner';
 
@@ -279,9 +279,33 @@ export function DocumentPreviewModal({ isOpen, onClose, onOpenPrintPreview, docu
   };
 
   const handleDownload = async () => {
-    toast.loading(`Preparazione download "${document.title}"...`);
     try {
-      await downloadDocument(document.title, document.type, 'pdf');
+      toast.loading(`Preparazione download "${document.title}"...`);
+      
+      const currentQuizContent = editedQuizContent || quizContent;
+      if (!currentQuizContent) {
+        toast.error('Contenuto non disponibile');
+        return;
+      }
+
+      // Create a formatted document using the utility
+      const documentData = {
+        title: `${editedDocument.subject} - ${editedDocument.title}`,
+        instructions: currentQuizContent.instructions,
+        questions: currentQuizContent.questions,
+        totalPoints: currentQuizContent.totalPoints,
+        timeLimit: currentQuizContent.timeLimit,
+        schoolInfo: editedSchoolInfo
+      };
+
+      // Generate and download PDF using utility function
+      await downloadDocument(
+        documentData.title, 
+        editedDocument.subject,
+        'pdf',
+        currentQuizContent,
+        editedSchoolInfo
+      );
       
       addActivity({
         type: 'download',
@@ -291,8 +315,10 @@ export function DocumentPreviewModal({ isOpen, onClose, onOpenPrintPreview, docu
       });
       
       toast.success(`"${document.title}" scaricato con successo!`);
+      
     } catch (error) {
-      toast.error('Errore durante il download');
+      console.error('Download error:', error);
+      toast.error('Errore durante il download del documento.');
     }
   };
 
@@ -515,188 +541,234 @@ export function DocumentPreviewModal({ isOpen, onClose, onOpenPrintPreview, docu
         {quizContent && (
           <div className="space-y-6">
             {/* Formatted Document */}
-            <div className="bg-white p-8 border rounded-lg print:border-0 print:p-0 font-serif">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="border-b-2 border-double border-gray-800 pb-4 mb-4">
+            <div data-document-content className="bg-white shadow-xl print:shadow-none rounded-2xl print:rounded-none overflow-hidden font-sans print:font-serif">
+              {/* Professional Header */}
+              <div className="bg-white border-b-2 border-slate-800 p-6 print:border-b-2 print:border-gray-800">
+                <div className="text-center">
                   {isEditing ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Input
                         value={editedSchoolInfo.schoolName}
                         onChange={(e) => setEditedSchoolInfo({...editedSchoolInfo, schoolName: e.target.value})}
-                        className="text-center font-bold text-lg"
+                        className="text-center font-bold text-lg text-gray-900 border-2 border-slate-200 focus:border-slate-400"
                       />
                       <Input
                         value={editedSchoolInfo.schoolAddress}
                         onChange={(e) => setEditedSchoolInfo({...editedSchoolInfo, schoolAddress: e.target.value})}
-                        className="text-center text-sm"
+                        className="text-center text-sm text-gray-700 border-2 border-slate-200 focus:border-slate-400"
                       />
                     </div>
                   ) : (
                     <>
-                      <h1 className="text-lg font-bold">{editedSchoolInfo.schoolName}</h1>
-                      <p className="text-sm">{editedSchoolInfo.schoolAddress}</p>
+                      <h1 className="text-2xl font-bold mb-2 text-gray-900 print:text-lg print:text-black">{editedSchoolInfo.schoolName}</h1>
+                      <p className="text-gray-600 print:text-sm print:text-gray-600">{editedSchoolInfo.schoolAddress}</p>
                     </>
                   )}
                 </div>
-                
-                {isEditing ? (
-                  <div className="mb-4">
-                    <Label htmlFor="header-subject" className="text-sm">Materia per intestazione</Label>
-                    <Input
-                      id="header-subject"
-                      value={editedDocument.subject}
-                      onChange={(e) => setEditedDocument({...editedDocument, subject: e.target.value})}
-                      className="text-center font-bold text-xl uppercase mt-2"
-                    />
-                  </div>
-                ) : (
-                  <h2 className="text-xl font-bold uppercase mb-4">
-                    VERIFICA DI {document.subject.toUpperCase()}
-                  </h2>
-                )}
-                
-                <div className="flex justify-between items-center text-sm mb-6">
+              </div>
+
+              <div className="p-8">
+                {/* Subject Title */}
+                <div className="text-center mb-8">
                   {isEditing ? (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <span>Classe:</span>
-                        <Input
-                          value={editedSchoolInfo.className}
-                          onChange={(e) => setEditedSchoolInfo({...editedSchoolInfo, className: e.target.value})}
-                          className="w-20 h-6 text-sm text-center"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span>Data:</span>
-                        <Input
-                          value={editedSchoolInfo.date}
-                          onChange={(e) => setEditedSchoolInfo({...editedSchoolInfo, date: e.target.value})}
-                          className="w-24 h-6 text-sm text-center"
-                        />
-                      </div>
-                    </>
+                    <div className="mb-4">
+                      <Label htmlFor="header-subject" className="text-sm text-gray-600">Materia per intestazione</Label>
+                      <Input
+                        id="header-subject"
+                        value={editedDocument.subject}
+                        onChange={(e) => setEditedDocument({...editedDocument, subject: e.target.value})}
+                        className="text-center font-bold text-2xl uppercase mt-2 border-2 border-slate-200 focus:border-slate-400"
+                      />
+                    </div>
                   ) : (
-                    <>
-                      <div>Classe: {editedSchoolInfo.className}</div>
-                      <div>Data: {editedSchoolInfo.date}</div>
-                    </>
+                    <div className="relative">
+                      <h2 className="text-3xl font-bold text-slate-800 mb-4 print:text-xl print:uppercase">
+                        VERIFICA DI {document.subject.toUpperCase()}
+                      </h2>
+                      <div className="w-24 h-0.5 bg-slate-800 mx-auto print:hidden"></div>
+                    </div>
                   )}
                 </div>
                 
-                <div className="flex justify-between mb-6">
-                  <div className="flex-1">
-                    <span className="text-sm">Nome: </span>
-                    <span className="inline-block border-b border-gray-400 w-40 ml-2"></span>
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-sm">Cognome: </span>
-                    <span className="inline-block border-b border-gray-400 w-40 ml-2"></span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="mb-8 p-4 bg-gray-50 rounded border print:bg-transparent print:border-gray-400">
-                <h3 className="font-bold mb-2">ISTRUZIONI PER LO SVOLGIMENTO:</h3>
-                <p className="text-sm">{quizContent.instructions}</p>
-                <div className="flex justify-between mt-2 text-sm">
-                  <span>Tempo a disposizione: {quizContent.timeLimit} minuti</span>
-                  <span>Punteggio totale: {quizContent.totalPoints} punti</span>
-                </div>
-              </div>
-
-              {/* Questions */}
-              <div className="space-y-6">
-                {(isEditing ? editedQuizContent : quizContent)?.questions.map((question, index) => (
-                  <div key={question.id} className="break-inside-avoid">
-                    <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-bold text-base">
-                        DOMANDA {index + 1}
-                      </h4>
-                      <span className="text-sm bg-gray-200 px-2 py-1 rounded">
-                        {question.points} punti
-                      </span>
+                {/* Student Info Card */}
+                <div className="bg-slate-50 print:bg-white border border-slate-200 print:border-gray-300 p-6 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-600">Classe:</span>
+                        {isEditing ? (
+                          <Input
+                            value={editedSchoolInfo.className}
+                            onChange={(e) => setEditedSchoolInfo({...editedSchoolInfo, className: e.target.value})}
+                            className="w-24 h-8 text-sm text-center border-slate-200 focus:border-slate-400"
+                          />
+                        ) : (
+                          <span className="font-bold text-slate-700 print:text-black">{editedSchoolInfo.className}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-600">Data:</span>
+                        {isEditing ? (
+                          <Input
+                            value={editedSchoolInfo.date}
+                            onChange={(e) => setEditedSchoolInfo({...editedSchoolInfo, date: e.target.value})}
+                            className="w-28 h-8 text-sm text-center border-slate-200 focus:border-slate-400"
+                          />
+                        ) : (
+                          <span className="font-bold text-slate-700 print:text-black">{editedSchoolInfo.date}</span>
+                        )}
+                      </div>
                     </div>
                     
-                    {isEditing ? (
-                      <Textarea
-                        value={question.text}
-                        onChange={(e) => updateQuestionText(question.id, e.target.value)}
-                        className="mb-4 text-sm leading-relaxed min-h-[60px]"
-                      />
-                    ) : (
-                      <p className="mb-4 text-sm leading-relaxed">{question.text}</p>
-                    )}
-                    
-                    {question.type === 'multiple_choice' && question.options ? (
-                      <div className="space-y-2 mb-4">
-                        {question.options.map((option, optIndex) => (
-                          <div key={optIndex} className="flex items-start gap-2">
-                            <span className="font-medium min-w-[20px]">
-                              {String.fromCharCode(65 + optIndex)})
-                            </span>
-                            {isEditing ? (
-                              <Input
-                                value={option}
-                                onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
-                                className="text-sm flex-1"
-                              />
-                            ) : (
-                              <span className="text-sm">{option}</span>
-                            )}
+                    <div className="space-y-4">
+                      <div className="flex items-center">
+                        <span className="text-sm font-semibold text-gray-600 mr-3">Nome:</span>
+                        <div className="flex-1 border-b-2 border-slate-300 pb-1"></div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-sm font-semibold text-gray-600 mr-3">Cognome:</span>
+                        <div className="flex-1 border-b-2 border-slate-300 pb-1"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Instructions Card */}
+                <div className="bg-slate-100 print:bg-gray-50 border border-slate-300 print:border-gray-400 p-6 mb-8">
+                  <h3 className="font-bold text-slate-800 print:text-gray-800 mb-3 text-center">ISTRUZIONI PER LO SVOLGIMENTO</h3>
+                  <div className="border-t border-slate-300 pt-4">
+                    <p className="text-slate-700 print:text-gray-700 text-sm mb-4 text-center">{quizContent.instructions}</p>
+                    <div className="flex justify-center gap-8 text-sm">
+                      <div className="text-center">
+                        <span className="font-semibold text-slate-700 print:text-gray-700">⏱ Tempo:</span>
+                        <div className="font-bold text-slate-800 print:text-gray-800">{quizContent.timeLimit} minuti</div>
+                      </div>
+                      <div className="text-center">
+                        <span className="font-semibold text-slate-700 print:text-gray-700">🎯 Punteggio:</span>
+                        <div className="font-bold text-slate-800 print:text-gray-800">{quizContent.totalPoints} punti</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Questions */}
+                <div className="space-y-8">
+                  {(isEditing ? editedQuizContent : quizContent)?.questions.map((question, index) => (
+                    <div key={question.id} className="break-inside-avoid">
+                      {/* Question Card */}
+                      <div className="bg-white print:bg-transparent border border-slate-200 print:border-gray-300 p-6 print:p-4">
+                        {/* Question Header */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-800 print:bg-gray-600 flex items-center justify-center">
+                              <span className="text-white font-bold text-lg print:text-sm">{index + 1}</span>
+                            </div>
+                            <h4 className="font-bold text-lg text-slate-800 print:text-base">
+                              DOMANDA {index + 1}
+                            </h4>
                           </div>
-                        ))}
-                        <div className="mt-4">
-                          <span className="text-sm font-medium">Risposta: </span>
-                          <span className="inline-block border-b border-gray-400 w-8 ml-2"></span>
+                          <span className="bg-slate-200 print:bg-gray-200 text-slate-800 print:text-black px-3 py-1 text-sm font-semibold">
+                            {question.points} {question.points === 1 ? 'punto' : 'punti'}
+                          </span>
+                        </div>
+                        
+                        {/* Question Text */}
+                        <div className="mb-6">
+                          {isEditing ? (
+                            <Textarea
+                              value={question.text}
+                              onChange={(e) => updateQuestionText(question.id, e.target.value)}
+                              className="mb-4 text-sm leading-relaxed min-h-[80px] border-2 border-slate-300 focus:border-slate-500"
+                            />
+                          ) : (
+                            <div className="bg-slate-50 print:bg-transparent p-4 border-l-4 border-slate-400 print:border-gray-400">
+                              <p className="text-slate-800 leading-relaxed">{question.text}</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Answer Section */}
+                        <div className="mt-6">
+                          {question.type === 'multiple_choice' && question.options ? (
+                            <div className="space-y-3">
+                              <h5 className="font-semibold text-slate-700 mb-4 print:mb-2">Opzioni di risposta:</h5>
+                              {question.options.map((option, optIndex) => (
+                                <div key={optIndex} className="flex items-center gap-3 p-3 bg-slate-50 print:bg-transparent border border-slate-200 print:border-gray-200 mb-2">
+                                  <div className="w-8 h-8 bg-slate-700 print:bg-gray-400 text-white flex items-center justify-center font-bold">
+                                    {String.fromCharCode(65 + optIndex)}
+                                  </div>
+                                  {isEditing ? (
+                                    <Input
+                                      value={option}
+                                      onChange={(e) => updateQuestionOption(question.id, optIndex, e.target.value)}
+                                      className="text-sm flex-1 border-slate-200 focus:border-slate-400"
+                                    />
+                                  ) : (
+                                    <span className="text-slate-800 flex-1">{option}</span>
+                                  )}
+                                </div>
+                              ))}
+                              <div className="mt-6 p-4 bg-slate-50 print:bg-transparent border border-slate-300 print:border-gray-300">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-semibold text-slate-800 print:text-gray-800">✏️ Risposta:</span>
+                                  <div className="border-b-2 border-slate-400 print:border-gray-400 w-16 h-8"></div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <h5 className="font-semibold text-slate-700 mb-4">Spazio per la risposta:</h5>
+                              {[1, 2, 3, 4, 5].map(line => (
+                                <div key={line} className="border-b-2 border-slate-300 h-8 print:border-gray-400"></div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {[1, 2, 3, 4].map(line => (
-                          <div key={line} className="border-b border-gray-400 h-6"></div>
-                        ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Footer - Results Section */}
+                <div className="mt-12 bg-slate-50 print:bg-transparent p-6 print:p-4 border-t-4 border-slate-800 print:border-gray-800">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 print:mb-4 text-center">VALUTAZIONE</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    {/* Score Section */}
+                    <div className="bg-white print:bg-transparent p-4 border border-slate-300 print:border-gray-400">
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-slate-600 mb-3">PUNTEGGIO OTTENUTO</p>
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="border-b-2 border-slate-400 print:border-gray-400 w-16 h-10 bg-slate-50 print:bg-transparent"></div>
+                          <span className="text-lg font-bold text-slate-700">/ {quizContent.totalPoints}</span>
+                          <span className="text-sm text-slate-500">punti</span>
+                        </div>
                       </div>
-                    )}
-                    
-                    {index < (isEditing ? editedQuizContent : quizContent)!.questions.length - 1 && (
-                      <hr className="my-6 border-gray-300" />
-                    )}
-                  </div>
-                ))}
-              </div>
+                    </div>
 
-              {/* Footer */}
-              <div className="mt-12 pt-6 border-t-2 border-double border-gray-800">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <span className="text-sm font-medium">PUNTEGGIO OTTENUTO: </span>
-                    <span className="inline-block border-b border-gray-400 w-12 mx-2"></span>
-                    <span className="text-sm">/ {quizContent.totalPoints} punti</span>
+                    {/* Grade Section */}
+                    <div className="bg-white print:bg-transparent p-4 border border-slate-300 print:border-gray-400">
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-slate-600 mb-3">VOTO FINALE</p>
+                        <div className="border-b-2 border-slate-400 print:border-gray-400 w-20 h-10 bg-slate-50 print:bg-transparent mx-auto"></div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium">VOTO: </span>
-                    <span className="inline-block border-b border-gray-400 w-12 ml-2"></span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between mt-6">
-                  <div>
-                    <span className="text-sm">Docente: </span>
-                    <span className="inline-block border-b border-gray-400 w-40 ml-2"></span>
-                  </div>
-                  <div>
-                    <span className="text-sm">Firma: </span>
-                    <span className="inline-block border-b border-gray-400 w-32 ml-2"></span>
+
+                  {/* Signature Section */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-300 print:border-gray-400">
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-semibold text-slate-600 min-w-[80px]">Docente:</span>
+                      <div className="flex-1 border-b-2 border-slate-400 print:border-gray-400 h-8 bg-slate-50 print:bg-transparent"></div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-semibold text-slate-600 min-w-[60px]">Firma:</span>
+                      <div className="flex-1 border-b-2 border-slate-400 print:border-gray-400 h-8 bg-slate-50 print:bg-transparent"></div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Footer note */}
-              <div className="text-center mt-8 text-xs text-gray-500">
-                Documento generato con Teaching Hub - www.teachinghub.it
-              </div>
             </div>
           </div>
         )}
