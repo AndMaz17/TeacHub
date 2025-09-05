@@ -4,101 +4,27 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Wand2, 
-  Settings,
   BookOpen,
-  FileText,
   Brain,
   Lightbulb,
   Target,
   Clock,
-  Users,
   Sparkles
 } from 'lucide-react';
 import { QuizModal } from '@/components/generator/quiz-modal';
-import { toast } from 'sonner';
 
 export default function GeneratorPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'literature' | 'stem' | 'quick'>('literature');
   const [modalPresetSubject, setModalPresetSubject] = useState<string>('');
 
-  // Form state for custom generator
-  const [customForm, setCustomForm] = useState({
-    subject: '',
-    topic: '',
-    grade: '',
-    difficulty: 'Medio',
-    questions: 10,
-    time: 60,
-    instructions: ''
-  });
-
   const handleQuickGenerate = (type: 'literature' | 'stem' | 'quick', presetSubject?: string) => {
     setModalType(type);
     setModalPresetSubject(presetSubject || '');
     setModalOpen(true);
-  };
-
-  const handleCustomGenerate = () => {
-    if (!customForm.subject || !customForm.topic) {
-      toast.error('Compila almeno Materia e Argomento');
-      return;
-    }
-
-    // Determine the best type based on subject
-    let type: 'literature' | 'stem' | 'quick' = 'quick';
-    const subject = customForm.subject.toLowerCase();
-    
-    if (subject.includes('letteratura') || subject.includes('italiano') || subject.includes('storia') || subject.includes('filosofia')) {
-      type = 'literature';
-    } else if (subject.includes('matematica') || subject.includes('fisica') || subject.includes('chimica') || subject.includes('scienze')) {
-      type = 'stem';
-    }
-
-    setModalType(type);
-    setModalPresetSubject(customForm.subject);
-    setModalOpen(true);
-  };
-
-  const handleSaveTemplate = () => {
-    if (!customForm.subject || !customForm.topic) {
-      toast.error('Compila almeno Materia e Argomento per salvare il template');
-      return;
-    }
-
-    toast.success(`Template "${customForm.subject} - ${customForm.topic}" salvato`);
-    
-    // Clear form
-    setCustomForm({
-      subject: '',
-      topic: '',
-      grade: '',
-      difficulty: 'Medio',
-      questions: 10,
-      time: 60,
-      instructions: ''
-    });
-  };
-
-  const handleTemplateClick = (templateName: string, subject: string) => {
-    toast.info(`Caricamento template "${templateName}"...`);
-    
-    // Simulate loading template data
-    setTimeout(() => {
-      if (subject === 'Letteratura') {
-        handleQuickGenerate('literature', 'Letteratura Italiana');
-      } else if (subject === 'Matematica') {
-        handleQuickGenerate('stem', 'Matematica');
-      } else {
-        handleQuickGenerate('quick', subject);
-      }
-    }, 500);
   };
 
   return (
@@ -180,162 +106,6 @@ export default function GeneratorPage() {
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Generazione Personalizzata
-            </CardTitle>
-            <CardDescription>
-              Configura i parametri per creare la verifica perfetta
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="subject">Materia</Label>
-                  <Input 
-                    id="subject" 
-                    placeholder="Es. Letteratura Italiana, Matematica..."
-                    value={customForm.subject}
-                    onChange={(e) => setCustomForm({ ...customForm, subject: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="topic">Argomento Specifico</Label>
-                  <Input 
-                    id="topic" 
-                    placeholder="Es. Dante Inferno, Equazioni di 2° grado..."
-                    value={customForm.topic}
-                    onChange={(e) => setCustomForm({ ...customForm, topic: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="grade">Classe/Livello</Label>
-                  <Input 
-                    id="grade" 
-                    placeholder="Es. 3° Superiore, Università..."
-                    value={customForm.grade}
-                    onChange={(e) => setCustomForm({ ...customForm, grade: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="difficulty">Difficoltà</Label>
-                  <select 
-                    className="w-full p-2 border rounded-md"
-                    value={customForm.difficulty}
-                    onChange={(e) => setCustomForm({ ...customForm, difficulty: e.target.value })}
-                  >
-                    <option>Facile</option>
-                    <option>Medio</option>
-                    <option>Difficile</option>
-                    <option>Misto</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="questions">Numero Domande</Label>
-                  <Input 
-                    id="questions" 
-                    type="number" 
-                    min="1" 
-                    max="50"
-                    value={customForm.questions}
-                    onChange={(e) => setCustomForm({ ...customForm, questions: parseInt(e.target.value) || 10 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="time">Tempo (minuti)</Label>
-                  <Input 
-                    id="time" 
-                    type="number" 
-                    min="10" 
-                    max="180"
-                    value={customForm.time}
-                    onChange={(e) => setCustomForm({ ...customForm, time: parseInt(e.target.value) || 60 })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="instructions">Istruzioni Aggiuntive (Opzionale)</Label>
-              <Textarea 
-                id="instructions"
-                placeholder="Aggiungi istruzioni specifiche per l'AI: stile delle domande, riferimenti particolari, formato desiderato..."
-                rows={3}
-                value={customForm.instructions}
-                onChange={(e) => setCustomForm({ ...customForm, instructions: e.target.value })}
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="flex-1" onClick={handleCustomGenerate}>
-                <Wand2 className="mr-2 h-5 w-5" />
-                Genera Verifica con AI
-              </Button>
-              <Button variant="outline" size="lg" onClick={handleSaveTemplate}>
-                <FileText className="mr-2 h-5 w-5" />
-                Salva come Template
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Template della Community
-            </CardTitle>
-            <CardDescription>
-              Scopri i template più utilizzati da altri docenti
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div 
-                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => handleTemplateClick('Verifica Dante', 'Letteratura')}
-              >
-                <h4 className="font-semibold mb-2">Verifica Dante</h4>
-                <p className="text-sm text-gray-600 mb-3">Comprensione Inferno I-III</p>
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="text-xs">Letteratura</Badge>
-                  <span className="text-xs text-gray-500">1.2k usi</span>
-                </div>
-              </div>
-
-              <div 
-                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => handleTemplateClick('Quiz Storia', 'Storia')}
-              >
-                <h4 className="font-semibold mb-2">Quiz Storia</h4>
-                <p className="text-sm text-gray-600 mb-3">Rivoluzione Francese</p>
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="text-xs">Storia</Badge>
-                  <span className="text-xs text-gray-500">856 usi</span>
-                </div>
-              </div>
-
-              <div 
-                className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => handleTemplateClick('Test Matematica', 'Matematica')}
-              >
-                <h4 className="font-semibold mb-2">Test Matematica</h4>
-                <p className="text-sm text-gray-600 mb-3">Equazioni 2° grado</p>
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="text-xs">Matematica</Badge>
-                  <span className="text-xs text-gray-500">743 usi</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <QuizModal 

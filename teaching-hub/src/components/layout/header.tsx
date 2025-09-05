@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { BookOpen, User, Menu, Plus, Search, Bell } from 'lucide-react';
+import { BookOpen, User, Menu, Search, Bell } from 'lucide-react';
 import Link from 'next/link';
 
 export function Header() {
@@ -25,16 +25,16 @@ export function Header() {
                 Dashboard
               </Link>
               <Link 
-                href="/documents" 
-                className="text-gray-600 hover:text-gray-900 font-medium"
-              >
-                Documenti
-              </Link>
-              <Link 
                 href="/generator" 
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
                 Generatore
+              </Link>
+              <Link 
+                href="/documents" 
+                className="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Documenti
               </Link>
               <Link 
                 href="/templates" 
@@ -49,11 +49,6 @@ export function Header() {
             <Button variant="outline" size="sm" className="hidden sm:flex">
               <Search className="h-4 w-4 mr-2" />
               Cerca
-            </Button>
-            
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo
             </Button>
 
             <Button variant="ghost" size="sm" className="hidden sm:flex">

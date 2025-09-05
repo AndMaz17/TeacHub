@@ -5,21 +5,81 @@ import {
   FileText, 
   Wand2, 
   Layout, 
-  Archive,
-  Settings,
-  PlusCircle,
-  BookOpen
+  BookOpen,
+  Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
+const MiniCalendar = () => {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const currentDate = today.getDate();
+
+  // Primo giorno del mese
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  // Ultimo giorno del mese
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  
+  // Giorni della settimana (abbreviazioni italiane)
+  const weekDays = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+  
+  // Calcola il primo giorno della settimana (lunedì = 0)
+  const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
+  
+  const days = [];
+  
+  // Aggiungi giorni vuoti per allineare il primo giorno
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    days.push(null);
+  }
+  
+  // Aggiungi tutti i giorni del mese
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    days.push(day);
+  }
+
+  return (
+    <div className="text-xs">
+      {/* Header giorni settimana */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {weekDays.map((day, index) => (
+          <div key={index} className="text-center text-gray-500 font-medium py-1">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      {/* Griglia giorni */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, index) => (
+          <div
+            key={index}
+            className={cn(
+              "text-center py-1 rounded",
+              day ? "hover:bg-gray-100 cursor-pointer" : "",
+              day === currentDate
+                ? "bg-blue-600 text-white font-semibold"
+                : day
+                ? "text-gray-700"
+                : ""
+            )}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Documenti', href: '/documents', icon: FileText },
   { name: 'Generatore', href: '/generator', icon: Wand2 },
+  { name: 'Documenti', href: '/documents', icon: FileText },
   { name: 'Template', href: '/templates', icon: Layout },
-  { name: 'Archivio', href: '/archive', icon: Archive },
 ];
 
 export function Sidebar() {
@@ -58,29 +118,20 @@ export function Sidebar() {
             );
           })}
         </nav>
-
-        <div className="flex-shrink-0 p-4">
-          <Link
-            href="/generator/new"
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <PlusCircle className="h-5 w-5 mr-2" />
-            Crea Verifica
-          </Link>
-        </div>
       </div>
 
-      <div className="flex-shrink-0">
-        <Link
-          href="/settings"
-          className={cn(
-            'group flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-            pathname === '/settings' && 'bg-gray-100 text-gray-900'
-          )}
-        >
-          <Settings className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
-          Impostazioni
-        </Link>
+      <div className="flex-shrink-0 p-4">
+        <div className="bg-white rounded-lg border shadow-sm">
+          <div className="flex items-center justify-center py-2 border-b bg-gray-50 rounded-t-lg">
+            <Calendar className="h-4 w-4 text-gray-600 mr-2" />
+            <span className="text-sm font-medium text-gray-700">
+              {new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+            </span>
+          </div>
+          <div className="p-2">
+            <MiniCalendar />
+          </div>
+        </div>
       </div>
     </div>
   );
